@@ -12,6 +12,8 @@ class TodoListViewController: UITableViewController {
 
     var itemArray = [Item]()
     
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
@@ -33,6 +35,10 @@ class TodoListViewController: UITableViewController {
         if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
             itemArray = items
         }
+        
+//        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+//            itemArray = items
+//        }
     }
     
     //MARK: - TableView Delegate Methods
@@ -66,6 +72,8 @@ class TodoListViewController: UITableViewController {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
         
+        saveItems()
+        
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -85,9 +93,8 @@ class TodoListViewController: UITableViewController {
             
             self.itemArray.append(newItem)
             
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
-            
-            self.tableView.reloadData()
+            self.saveItems()
+
         }
         
         alert.addTextField { (alertTextField) in
@@ -100,6 +107,28 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(self.itemArray)
+            try data.write(to: self.dataFilePath!)
+        } catch {
+            print("Error encoding item array, \(error)")
+        }
+        self.tableView.reloadData()
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+        } catch {
+            print("Error decoding item array")
+            }
+        }
+    }
     
     
 }
